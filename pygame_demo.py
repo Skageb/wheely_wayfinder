@@ -24,7 +24,7 @@ def pygame_thread():
         GREEN = (34, 139, 34)
 
 
-        CONTROLLER = 0  # For testing, 1 for aruco, 0 for keyboard
+        CONTROLLER = 1  # For testing, 1 for aruco, 0 for keyboard
 
 
         def draw_stippled_line(surface, color, start_pos, end_pos, segments=200):
@@ -106,12 +106,28 @@ def pygame_thread():
                 self.type = type
                 self.duration = duration
 
+        
+        class ArucoMarker(pygame.sprite.Sprite):
+            def __init__(self, image_path, position):
+                super().__init__()
+                # Load the image and scale it
+                self.image = pygame.image.load(image_path).convert_alpha()
+                self.image = pygame.transform.scale(self.image, (30, 30))
+
+                # Set the position of the sprite
+                self.rect = self.image.get_rect(topleft=position)
+
         # Arrow Class
         class Arrow(pygame.sprite.Sprite):
             def __init__(self, x, y):
                 super().__init__()
                 self.original_image = pygame.Surface((50, 20), pygame.SRCALPHA)
                 pygame.draw.polygon(self.original_image, (0, 0, 0), [(0, 0), (30, 10), (0, 20), (10, 10)])
+                cone_length = 30  # Adjust as needed
+                cone_width = 20   # Adjust as needed
+                pygame.draw.polygon(self.original_image, (255, 0, 0, 60), [(30, 10), (30 + cone_length, 10 - cone_width // 2), (30 + cone_length, 10 + cone_width // 2)])
+
+
                 self.image = self.original_image
                 self.rect = self.image.get_rect(center=(x, y))
                 self.direction = pygame.math.Vector2(SPEED, 0)
@@ -278,7 +294,7 @@ def pygame_thread():
 
 
             def store_remaining_movement(self):
-                if len(self.pending_instructions > 0):
+                if len(self.pending_instructions) > 0:
                     self.pending_instructions.pop(0)
                     self.pending_instructions.insert(0, instructions("forward", self.move_timer/1000))
 
@@ -294,8 +310,9 @@ def pygame_thread():
                     pygame.draw.circle(surface, (0, 0, 0), (int(point.x), int(point.y)), 3)
 
         # Setup the screen
+        aruco_markers = pygame.sprite.Group()
         obstacles = []
-        screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+        screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.DOUBLEBUF, 32)
         pygame.display.set_caption("Wheely Wayfinder simulator")
 
         # Create an arrow
@@ -350,6 +367,7 @@ def pygame_thread():
                 try:
                     new_id = shared_aruco_queue.get_nowait()  # Non-blocking get
                     # Execute the corresponding function
+                    aruco_markers.add(ArucoMarker("aruco_marker.png", tuple((arrow.position + arrow.direction.normalize() * 40))))
                     if new_id == 2:
                         arrow.instructions_2()
                     if new_id == 3:
@@ -365,12 +383,16 @@ def pygame_thread():
             elif CONTROLLER == 0:
                 if keys[pygame.K_2]:
                     arrow.instructions_2()
+                    aruco_markers.add(ArucoMarker("aruco_marker.png", tuple((arrow.position + arrow.direction.normalize() * 40))))
                 if keys[pygame.K_3]:
                     arrow.instructions_3()
+                    aruco_markers.add(ArucoMarker("aruco_marker.png", tuple((arrow.position + arrow.direction.normalize() * 40))))
                 if keys[pygame.K_4]:
                     arrow.instructions_4()
+                    aruco_markers.add(ArucoMarker("aruco_marker.png", tuple((arrow.position + arrow.direction.normalize() * 40))))
                 if keys[pygame.K_5]:
                     arrow.instructions_5()
+                    aruco_markers.add(ArucoMarker("aruco_marker.png", tuple((arrow.position + arrow.direction.normalize() * 40))))
 
 
             # Draw everything
@@ -378,6 +400,7 @@ def pygame_thread():
             draw_grid(screen, pygame.Color((200, 200, 200)))
             arrow.draw_trail(screen)
             screen.blit(arrow.image, arrow.rect)
+            aruco_markers.draw(screen)
 
             # In your main game loop
             if arrow.simulated_position:
