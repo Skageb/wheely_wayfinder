@@ -2,7 +2,8 @@ import pygame
 
 import pygame
 import math
-
+from shared_queue import shared_aruco_queue
+import queue
 
 def pygame_thread():
     try:
@@ -25,17 +26,31 @@ def pygame_thread():
                 pygame.draw.polygon(self.original_image, (0, 0, 0), [(0, 0), (30, 10), (0, 20), (10, 10)])
                 self.image = self.original_image
                 self.rect = self.image.get_rect(center=(x, y))
-                self.direction = pygame.math.Vector2(1, 0)
+                self.direction = pygame.math.Vector2(2, 0)
                 self.position = pygame.math.Vector2(x, y)
                 self.angle = 0
                 self.trail = []
                 self.distance_since_last_trail = 0
                 self.moving = False
+                self.rotating = False
+                self.target_angle = 0
                 self.move_timer = 0
+                self.rotation_speed = 0
                 
 
 
             def update(self, dt):
+                if self.rotating:
+                    rotation_step = 4
+                    if abs(self.target_angle - self.angle) < abs(rotation_step):
+                        self.angle = self.target_angle
+                        self.rotating = False
+                    else:
+                        self.angle += rotation_step
+                        self.direction.rotate_ip(rotation_step)
+                    self.image = pygame.transform.rotate(self.original_image, -self.angle)
+                    self.rect = self.image.get_rect(center=self.rect.center)
+
                 if self.move_timer > 0:
                     self.move_timer -= dt
                     self.position += self.direction
@@ -50,7 +65,15 @@ def pygame_thread():
             def jetbot_forward(self, speed, duration):
                 self.move_timer = duration*1000
                 self.moving == True
-                self.direction = pygame.math.Vector2(speed, 0)
+
+            def jetbot_right(self, speed=1):
+                self.rotate2(90)
+
+
+            def rotate2(self, angle):
+                self.target_angle = self.angle + angle
+                self.rotate_speed = 4
+                self.rotating = True
 
 
             def rotate(self, angle):
@@ -83,8 +106,19 @@ def pygame_thread():
 
             # Update
             arrow.update(dt)
-            
             keys=pygame.key.get_pressed()
+
+            try:
+                new_id = shared_aruco_queue.get_nowait()  # Non-blocking get
+                # Execute the corresponding function
+                if new_id == 3:
+                    arrow.jetbot_forward(2, 1)
+                if new_id == 4:
+                    arrow.jetbot_right()
+            except queue.Empty:
+                pass  # Do nothing if the queue is empty
+            
+            
             if keys[pygame.K_m]:
                 arrow.jetbot_forward(2, 1)
             # Rotate the arrow with arrow keys
@@ -108,3 +142,6 @@ def pygame_thread():
         print("Pygame thread finished.")
     except Exception as e:
         print(f"Error in Pygame thread: {e}")
+
+if __name__ == "__main__":
+    pygame_thread()

@@ -2,6 +2,7 @@ import cv2
 import cv2.aruco as aruco
 from marker_handler import MarkerHandlers
 import inspect
+from shared_queue import shared_aruco_queue
 
 
 def aruco_thread():
@@ -40,6 +41,7 @@ def aruco_thread():
             id = ids[0][0]
             if id != current_id:
                 handlerFunctions[id-1]()  
+                shared_aruco_queue.put(id)  #Only CHANGE MADE. Use Shared_queue
                 current_id = id
         else:
             #Set current_id to 0 current id is removed from frame
