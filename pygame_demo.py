@@ -23,8 +23,10 @@ def pygame_thread():
         BROWN = (139, 69, 19)
         GREEN = (34, 139, 34)
 
-
-        CONTROLLER = 0  # For testing, 1 for aruco, 0 for keyboard
+        if __name__ == "__main__":
+            CONTROLLER = 0  # For testing, 1 for aruco, 0 for keyboard
+        else:
+            CONTROLLER = 1
 
 
         def draw_stippled_line(surface, color, start_pos, end_pos, segments=200):
