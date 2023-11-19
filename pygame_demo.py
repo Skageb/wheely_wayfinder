@@ -334,15 +334,17 @@ def pygame_thread():
             keys=pygame.key.get_pressed()
             #Get message from obstacle queue
             try:
-                obstacle_message = None
                 #Place holder for get obstacle_message from QUeueue
-                if keys[pygame.K_o]:
-                    obstacle_message = 1
-                if keys[pygame.K_y]:
-                    obstacle_message = 2
-                if keys[pygame.K_n]:
-                    obstacle_message = 0
-        
+                if CONTROLLER == 0:
+                    obstacle_message = None
+                    if keys[pygame.K_o]:
+                        obstacle_message = 1
+                    if keys[pygame.K_y]:
+                        obstacle_message = 2
+                    if keys[pygame.K_n]:
+                        obstacle_message = 0
+                obstacle_message = shared_obstacle_queue.get_nowait()
+
                 #Potential obstacle
                 if obstacle_message == 1:
                     arrow.scanning = True
