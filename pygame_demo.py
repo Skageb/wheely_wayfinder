@@ -24,7 +24,7 @@ def pygame_thread():
         GREEN = (34, 139, 34)
 
 
-        CONTROLLER = 1  # For testing, 1 for aruco, 0 for keyboard
+        CONTROLLER = 0  # For testing, 1 for aruco, 0 for keyboard
 
 
         def draw_stippled_line(surface, color, start_pos, end_pos, segments=200):
@@ -343,7 +343,8 @@ def pygame_thread():
                         obstacle_message = 2
                     if keys[pygame.K_n]:
                         obstacle_message = 0
-                obstacle_message = shared_obstacle_queue.get_nowait()
+                else:
+                    obstacle_message = shared_obstacle_queue.get_nowait()
 
                 #Potential obstacle
                 if obstacle_message == 1:
